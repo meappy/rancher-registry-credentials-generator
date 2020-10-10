@@ -30,13 +30,11 @@ REGISTRY_DATA='{
   }
 }'
 
-# delete registry secret
+# delete then create registry secret
 curl --user "${RANCHER_ACCESS_KEY}:${RANCHER_SECRET_KEY}" \
      --silent --output /dev/null \
      --request DELETE \
-     ${RANCHER_URL}/v3/project/${RANCHER_PROJECT_ID}/dockerCredentials/${RANCHER_REGISTRY_SECRET_ID_PREFIX}:${REGISTRY_SECRET}
-
-# create registry secret
+     ${RANCHER_URL}/v3/project/${RANCHER_PROJECT_ID}/dockerCredentials/${RANCHER_REGISTRY_SECRET_ID_PREFIX}:${REGISTRY_SECRET} && \
 curl --user "${RANCHER_ACCESS_KEY}:${RANCHER_SECRET_KEY}" \
      --request POST \
      --header 'Accept: application/json' \
