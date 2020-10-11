@@ -30,14 +30,37 @@ REGISTRY_DATA='{
   }
 }'
 
-# delete then create registry secret
-curl --user "${RANCHER_ACCESS_KEY}:${RANCHER_SECRET_KEY}" \
-     --silent --output /dev/null \
-     --request DELETE \
-     ${RANCHER_URL}/v3/project/${RANCHER_PROJECT_ID}/dockerCredentials/${RANCHER_REGISTRY_SECRET_ID_PREFIX}:${REGISTRY_SECRET} && \
-curl --user "${RANCHER_ACCESS_KEY}:${RANCHER_SECRET_KEY}" \
-     --request POST \
-     --header 'Accept: application/json' \
-     --header 'Content-Type: application/json' \
-     --data "${REGISTRY_DATA}" \
-     ${RANCHER_URL}/v3/project/${RANCHER_PROJECT_ID}/dockerCredentials
+delete_secret () {
+  curl --user "${RANCHER_ACCESS_KEY}:${RANCHER_SECRET_KEY}" \
+       --silent --output /dev/null \
+       --request DELETE \
+       ${RANCHER_URL}/v3/project/${RANCHER_PROJECT_ID}/dockerCredentials/${RANCHER_REGISTRY_SECRET_ID_PREFIX}:${REGISTRY_SECRET}
+}
+
+http_response () {
+  curl --user "${RANCHER_ACCESS_KEY}:${RANCHER_SECRET_KEY}" \
+       --write-out '%{http_code}' --silent --output /dev/null \
+       --request GET \
+       ${RANCHER_URL}/v3/project/${RANCHER_PROJECT_ID}/dockerCredentials/${RANCHER_REGISTRY_SECRET_ID_PREFIX}:${REGISTRY_SECRET}
+}
+
+create_secret () {
+  curl --user "${RANCHER_ACCESS_KEY}:${RANCHER_SECRET_KEY}" \
+       --request POST \
+       --header 'Accept: application/json' \
+       --header 'Content-Type: application/json' \
+       --data "${REGISTRY_DATA}" \
+       ${RANCHER_URL}/v3/project/${RANCHER_PROJECT_ID}/dockerCredentials
+}
+
+while true; do
+  if [ "$(http_response)" == 404 ]; then
+    echo 'Secret does not exist, creating...'
+    create_secret
+    exit
+  else
+    echo 'Secret exists, deleting...'
+    delete_secret
+  fi
+  sleep 1
+done
